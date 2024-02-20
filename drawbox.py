@@ -96,16 +96,16 @@ class DrawBoxApp:
         
         
         print(f"Logo removed using coordinates: {self.rect_coords}")
-        self.play_video(output_file_path)
         self.master.destroy()
+        self.play_video(output_file_path)
 
     def play_video(self, video_path):
         try:
             subprocess.run(['xdg-open', video_path])
         except Exception as e:
             print(f"Error opening video: {e}")
-        finally:
-            webbrowser.open(video_path)
+        # finally:
+        #     webbrowser.open(video_path)
 
 
 def main():
