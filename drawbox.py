@@ -2,6 +2,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import os
 import subprocess
+import webbrowser
 
 
 class DrawBoxApp:
@@ -35,7 +36,7 @@ class DrawBoxApp:
     def segment_video(self):
         if not os.path.exists(self.snapshot_directory):
             os.makedirs(self.snapshot_directory)
-        subprocess.run(["ffmpeg", "-i", "INPUT.mp4", "-vf", "fps=0.5", f"{self.snapshot_directory}/snapshot_%03d.png"])
+        subprocess.run(["ffmpeg", "-i", "INPUT.mp4", "-vf", "fps=0.25", f"{self.snapshot_directory}/snapshot_%03d.png"])
 
     def load_images(self):
         for file in sorted(os.listdir(self.snapshot_directory)):
@@ -87,12 +88,24 @@ class DrawBoxApp:
             print("No selection made.")
             return
         x, y, w, h = self.rect_coords
-        input_file_path = 'INPUT.mp4' 
-        output_file_path = './output/OUTPUT.mp4'
+        input_file_path = 'INPUT.mp4'  # Replace with actual input file path
+        output_file_path = './output/OUTPUT.mp4'  # Replace with actual output file path
         delogo_filter = f"delogo=x={x}:y={y}:w={w}:h={h}"
-        command = ['ffmpeg', '-i', input_file_path, '-vf', delogo_filter, output_file_path]
+        command = ['ffmpeg', '-y', '-i', input_file_path, '-vf', delogo_filter, output_file_path]
         subprocess.run(command)
+        
+        
         print(f"Logo removed using coordinates: {self.rect_coords}")
+        self.play_video(output_file_path)
+        self.master.destroy()
+
+    def play_video(self, video_path):
+        try:
+            subprocess.run(['xdg-open', video_path])
+        except Exception as e:
+            print(f"Error opening video: {e}")
+        finally:
+            webbrowser.open(video_path)
 
 
 def main():
