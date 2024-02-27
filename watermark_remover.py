@@ -1,9 +1,11 @@
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
-import os
 import subprocess
+import ffmpeg
+import os
 import sys
+
 
 class WatermarkRemover:
     def __init__(self, master):
@@ -31,9 +33,9 @@ class WatermarkRemover:
         self.canvas.bind("<ButtonRelease-1>", self.on_button_release)
         self.rect_coords = None
         self.input = self.select_file()
-        if self.input: 
+        if self.input:
             self.segment_video()
-            self.load_images() 
+            self.load_images()
 
     def select_file(self):
         root = tk.Tk()
@@ -43,14 +45,21 @@ class WatermarkRemover:
             print("Selected file:", file_path)
         else:
             print("No file selected.")
-        return file_path  # Make sure to return the file path
+        return file_path
 
-    # split the video into screenshots spaced 1 second apart
+    # split the video into screenshots
     def segment_video(self):
         if not os.path.exists(self.snapshot_directory):
             os.makedirs(self.snapshot_directory)
         # Notice change from `input` to `self.input`
-        subprocess.run(["ffmpeg", "-i", self.input, "-vf", "fps=3", f"{self.snapshot_directory}/snapshot_%03d.png"])
+        subprocess.run([
+            "ffmpeg",
+            "-i",
+            self.input,
+            "-vf",
+            "fps=2",
+            f"{self.snapshot_directory}/snapshot_%02d.png"
+            ])
 
     # load images to canvas
     def load_images(self):
@@ -108,26 +117,16 @@ class WatermarkRemover:
             print("No selection made.")
             return
         x, y, w, h = self.rect_coords
-        input_file_path = self.input  # Replace with actual input file path
-        output_file_path = './output/OUTPUT.mp4'  # Replace with actual output file path
+        input_file_path = self.input
+        output_file_path = './OUTPUT.mp4'
         delogo_filter = f"delogo=x={x}:y={y}:w={w}:h={h}"
         command = ['ffmpeg', '-y', '-i', input_file_path, '-vf', delogo_filter, output_file_path]
         subprocess.run(command)
 
         print(f"Logo removed using coordinates: {self.rect_coords}")
+        print("Video watermark removed successfully!")
         self.master.destroy()
-
-    def open_output_folder(self, folder_path):
-        try:
-            if os.name == 'nt':
-                os.startfile(folder_path)
-            elif os.name == 'posix':
-                subprocess.run(['open', folder_path]) 
-            else:
-                print(f"Unsupported OS: {os.name}")
-        except Exception as e:
-            print(f"Error opening folder: {e}")
-
+        
 
 def main():
     root = tk.Tk()
