@@ -3,9 +3,18 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 import subprocess
 import ffmpeg
-import os
 import sys
+import os
 
+def resource_path(relative_path):
+    """ Get the absolute path to the resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 class WatermarkRemover:
     def __init__(self, master):
@@ -16,7 +25,7 @@ class WatermarkRemover:
         self.start_x, self.start_y = None, None
         self.rect = None
         self.image_urls = []
-        self.snapshot_directory = "./snapshots"
+        self.snapshot_directory = resource_path("\\snapshots")  # Updated to use resource_path()
         self.current_image_index = 0
 
         # Create Next and Previous buttons
@@ -55,11 +64,11 @@ class WatermarkRemover:
         subprocess.run([
             "ffmpeg",
             "-i",
-            self.input,
+            resource_path(self.input),  # Updated to use resource_path()
             "-vf",
             "fps=2",
-            f"{self.snapshot_directory}/snapshot_%02d.png"
-            ])
+            f"{resource_path(self.snapshot_directory)}/snapshot_%02d.png"  # Updated to use resource_path()
+        ])
 
     # load images to canvas
     def load_images(self):
@@ -79,15 +88,15 @@ class WatermarkRemover:
         except Exception as e:
             print("Error loading image:", e)
 
-    def next_image(self):     # Add next image button
+    def next_image(self):     
         self.current_image_index = (self.current_image_index + 1) % len(self.image_urls)
         self.show_image()
 
-    def previous_image(self):  # Add previous image buttton
+    def previous_image(self):  
         self.current_image_index = (self.current_image_index - 1) % len(self.image_urls)
         self.show_image()
 
-    def on_button_press(self, event):  # left mouse click erases previous rect
+    def on_button_press(self, event):  
         self.start_x = event.x
         self.start_y = event.y
         if self.rect:
@@ -111,14 +120,13 @@ class WatermarkRemover:
         print("Coordinates:", x, y, width, height)
 
     # removes watermark/logo from masked area
-
     def remove_logo(self):
         if self.rect_coords is None:
             print("No selection made.")
             return
         x, y, w, h = self.rect_coords
-        input_file_path = self.input
-        output_file_path = './OUTPUT.mp4'
+        input_file_path = resource_path(self.input)
+        output_file_path = resource_path('OUTPUT.mp4')
         delogo_filter = f"delogo=x={x}:y={y}:w={w}:h={h}"
         command = ['ffmpeg', '-y', '-i', input_file_path, '-vf', delogo_filter, output_file_path]
         subprocess.run(command)
@@ -126,13 +134,11 @@ class WatermarkRemover:
         print(f"Logo removed using coordinates: {self.rect_coords}")
         print("Video watermark removed successfully!")
         self.master.destroy()
-        
 
 def main():
     root = tk.Tk()
     app = WatermarkRemover(root)
     root.mainloop()
-
 
 if __name__ == "__main__":
     main()
